@@ -1,101 +1,129 @@
 """
-通用版：可切换保留/移除标点，同时生成带标点/无标点两个版本
-- 保留标点：用于端到端OCR+标点模型训练
-- 移除标点：纯OCR模型训练（彻底移除所有中文/英文标点）
+适配2-79图片编号规则：
+- 触发规则：空行 + 数字单独成行（数字=图片号，如2→0002.jpg）
+- 文本块：数字行后 → 下一个数字行前（每个数字对应1张图片的文本）
+- 生成：带标点/无标点文本块 + 图片-文本映射文件
 """
 import os
 import re
+from typing import Dict, List
 
-def clean_raw_text(
-    raw_text_path: str,
-    output_dir: str,
-    keep_punctuation: bool = True  # 控制是否保留标点
-) -> list:
+# ========== 核心配置（无需修改） ==========
+START_NUM = 2    # 起始图片编号
+END_NUM = 79     # 结束图片编号
+PUNCT_PATTERN = re.compile(  # 全覆盖标点正则（彻底移除）
+    r'[，。！？；：""''""''（）()【】\[\]、—…·《》<>「」『』｛｝￥＄％％＆＆＊＊＋＋－－／／＼＼｜｜～～｀｀､､·。]'
+    r'|[,!?:;"\'(){}<>%&*+-/\\|~`.$]'
+)
+
+def split_text_by_image_num(raw_text_path: str) -> Dict[int, List[str]]:
     """
-    清洗逻辑：
-    1. 保留多行结构（每行对应图片的一列/一行）
-    2. 移除行首数字编号（2、3、4...）
-    3. 可选：保留/彻底移除所有标点（中文+英文）
-    4. 跳过空行，保留繁体汉字
-    
-    关键修正：
-    - 正则表达式正确转义特殊字符，覆盖所有标点类型
-    - 彻底移除无标点版本的所有标点，无遗漏
+    按图片编号拆分文本块（核心逻辑）：
+    1. 识别空行+数字单独行 → 标记图片号
+    2. 提取数字行后到下一个数字行前的所有文本行
+    3. 返回：{图片号: 文本行列表}
     """
-    # ========== 修正核心：全覆盖+正确转义的标点正则 ==========
-    # 包含：所有中文全角标点 + 英文半角标点 + 特殊符号
-    punctuation_pattern = re.compile(
-        r'[，。！？；：""''""''（）()【】\[\]、—…·《》<>「」『』｛｝￥＄％％＆＆＊＊＋＋－－／／＼＼｜｜～～｀｀､､·。]'
-        r'|[,!?:;"\'(){}<>%&*+-/\\|~`.$]'  # 英文标点兜底
-    )
-    
-    # 读取原始文本
     if not os.path.exists(raw_text_path):
         raise FileNotFoundError(f"原始文本文件不存在：{raw_text_path}")
     
+    # 读取原始文本（保留换行，便于识别空行+数字行）
     with open(raw_text_path, 'r', encoding='utf-8') as f:
-        lines = f.readlines()
+        lines = [line.rstrip('\n') for line in f.readlines()]  # 保留换行符但去除末尾\n
     
-    cleaned_lines = []
+    # 初始化变量
+    image_text_map = {}  # {图片号: 文本行列表}
+    current_num = None   # 当前匹配的图片号
+    current_lines = []   # 当前图片的文本行
+    
     for line in lines:
-        # 步骤1：去除每行首尾的空格/换行符（彻底清理空白）
         line_stripped = line.strip()
         
-        # 步骤2：跳过空行（纯空白行直接过滤）
-        if not line_stripped:
+        # 1. 识别「数字单独成行」（空行后+纯数字行）
+        if line_stripped.isdigit():
+            num = int(line_stripped)
+            # 仅处理2-79的编号
+            if START_NUM <= num <= END_NUM:
+                # 先保存上一个图片的文本（如果有）
+                if current_num is not None and current_lines:
+                    image_text_map[current_num] = current_lines
+                # 重置：开始新图片的文本收集
+                current_num = num
+                current_lines = []
             continue
         
-        # 步骤3：移除行首数字编号（仅删行首的数字，不影响文本内数字）
-        if line_stripped[0].isdigit():
-            line_stripped = line_stripped[1:].strip()
-            if not line_stripped:
-                continue
-        
-        # 步骤4：核心修正 - 保留/彻底移除标点
-        if not keep_punctuation:
-            # 彻底替换所有标点为空字符串
-            line_stripped = punctuation_pattern.sub('', line_stripped)
-            # 移除后再次清理首尾空白（避免标点移除后留空）
-            line_stripped = line_stripped.strip()
-        
-        # 步骤5：再次跳过移除标点后为空的行
-        if not line_stripped:
-            continue
-        
-        # 步骤6：保留该行（严格匹配图片的多行结构）
-        cleaned_lines.append(line_stripped)
+        # 2. 收集当前图片的文本行（跳过空行）
+        if current_num is not None and line_stripped:
+            current_lines.append(line)
     
-    # 生成输出文件名（区分带/无标点）
+    # 保存最后一个图片的文本
+    if current_num is not None and current_lines:
+        image_text_map[current_num] = current_lines
+    
+    # 验证：确保2-79编号全覆盖
+    missing_nums = [num for num in range(START_NUM, END_NUM+1) if num not in image_text_map]
+    if missing_nums:
+        print(f"⚠️  警告：以下图片编号未匹配到文本 → {missing_nums}")
+    else:
+        print(f"✅ 成功匹配所有编号：{START_NUM}-{END_NUM}（共{len(image_text_map)}个文本块）")
+    
+    return image_text_map
+
+def clean_text_blocks(
+    image_text_map: Dict[int, List[str]],
+    output_dir: str,
+    keep_punctuation: bool = True
+) -> Dict[int, List[str]]:
+    """
+    清洗文本块：
+    - 保留标点：仅去除首尾空白（端到端模型）
+    - 移除标点：彻底移除所有标点+首尾空白（纯OCR模型）
+    """
+    cleaned_map = {}
+    for num, lines in image_text_map.items():
+        cleaned_lines = []
+        for line in lines:
+            line_stripped = line.strip()
+            # 移除标点（仅无标点版本）
+            if not keep_punctuation:
+                line_stripped = PUNCT_PATTERN.sub('', line_stripped)
+            if line_stripped:  # 跳过空行
+                cleaned_lines.append(line_stripped)
+        cleaned_map[num] = cleaned_lines
+    # 保存清洗后的文本文件
     suffix = "with_punct" if keep_punctuation else "no_punct"
-    output_path = os.path.join(output_dir, f"cleaned_text_{suffix}.txt")
-    
-    # 保存清洗后的多行文本（每行单独存储，匹配图片行）
+    output_path = os.path.join(output_dir, f"cleaned_text_blocks_{suffix}.txt")
     with open(output_path, 'w', encoding='utf-8') as f:
-        f.write('\n'.join(cleaned_lines))
+        for num in sorted(cleaned_map.keys()):
+            f.write(f"===== 图片编号：{num}（000{num}.jpg）=====\n")
+            f.write('\n'.join(cleaned_map[num]) + '\n\n')
+    # 保存映射文件（方便核对）
+    map_path = os.path.join(output_dir, f"image_text_map_{suffix}.txt")
+    with open(map_path, 'w', encoding='utf-8') as f:
+        for num in sorted(cleaned_map.keys()):
+            f.write(f"图片000{num}.jpg → 文本行数：{len(cleaned_map[num])}\n")
+    print(f"✅ 清洗完成（{'保留标点' if keep_punctuation else '移除标点'}）→ {output_path}")
+    return cleaned_map
+
+def main(raw_text_path: str, output_dir: str):
+    # 创建输出目录
+    os.makedirs(output_dir, exist_ok=True)
     
-    # 输出验证信息（直观展示清洗效果）
-    print(f"✅ 文本清洗完成（{'保留标点' if keep_punctuation else '移除标点'}）！")
-    print(f"   - 原始行数：{len(lines)} → 清洗后有效行数：{len(cleaned_lines)}")
-    print(f"   - 保存路径：{output_path}")
-    # 预览前2行结果，方便你核对
-    if cleaned_lines:
-        print(f"   - 预览前2行：")
-        for i, line in enumerate(cleaned_lines[:2]):
-            print(f"     第{i+1}行：{line}")
+    # 步骤1：按图片编号拆分文本块
+    print("===== 第一步：按图片编号拆分文本块 =====")
+    image_text_map = split_text_by_image_num(raw_text_path)
     
-    return cleaned_lines
+    # 步骤2：生成带标点版本（端到端模型）
+    print("\n===== 第二步：生成带标点文本块 =====")
+    clean_text_blocks(image_text_map, output_dir, keep_punctuation=True)
+    
+    # 步骤3：生成无标点版本（纯OCR模型）
+    print("\n===== 第三步：生成无标点文本块 =====")
+    clean_text_blocks(image_text_map, output_dir, keep_punctuation=False)
 
 if __name__ == "__main__":
-    # 路径配置（和你的项目结构严格对齐）
+    # 路径配置（和你的项目结构对齐）
     RAW_TEXT_PATH = "./data/raw_text_original.txt"
     OUTPUT_DIR = "./data"
     
-    # 确保输出目录存在
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    
-    # 生成两个版本：1. 保留标点（端到端模型） 2. 移除标点（纯OCR模型）
-    print("===== 生成带标点版本（端到端OCR+标点） =====")
-    clean_raw_text(RAW_TEXT_PATH, OUTPUT_DIR, keep_punctuation=True)
-    
-    print("\n===== 生成无标点版本（纯OCR） =====")
-    clean_raw_text(RAW_TEXT_PATH, OUTPUT_DIR, keep_punctuation=False)
+    # 执行清洗
+    main(RAW_TEXT_PATH, OUTPUT_DIR)
