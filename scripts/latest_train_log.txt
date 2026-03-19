@@ -1,0 +1,96 @@
+
+==============================
+
+{'loss': 3.7384, 'learning_rate': 8.750000000000001e-06, 'epoch': 0.56}                                                  
+
+{'loss': 1.8083, 'learning_rate': 7.500000000000001e-06, 'epoch': 1.13}                                                  
+
+{'loss': 1.6877, 'learning_rate': 6.25e-06, 'epoch': 1.69}                                                               
+
+{'loss': 1.5896, 'learning_rate': 5e-06, 'epoch': 2.25}                                                                  
+
+ 50%|██████████████████████████████████████████                                          | 20/40 [00:27<00:27,  1.36s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set  when initializing the tokenizer.
+
+Both  (=512) and (=512) seem to have been set.  will take precedence. Please refer to the documentation for more information. (https://huggingface.co/docs/transformers/main/en/main_classes/text_generation)
+
+{'eval_loss': 1.8670374155044556, 'eval_accuracy': -1.0848303393213574, 'eval_cer': 2.0848303393213574, 'eval_runtime': 14.6792, 'eval_samples_per_second': 0.409, 'eval_steps_per_second': 0.068, 'epoch': 2.25}                                 
+
+{'loss': 1.5698, 'learning_rate': 3.7500000000000005e-06, 'epoch': 2.82}                                                 
+
+{'loss': 1.5373, 'learning_rate': 2.5e-06, 'epoch': 3.38}                                                                
+
+{'loss': 1.5012, 'learning_rate': 1.25e-06, 'epoch': 3.94}                                                               
+
+{'loss': 1.451, 'learning_rate': 0.0, 'epoch': 4.51}                                                                     
+
+100%|████████████████████████████████████████████████████████████████████████████████████| 40/40 [01:09<00:00,  1.36s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set  when initializing the tokenizer.
+
+Both  (=512) and (=512) seem to have been set.  will take precedence. Please refer to the documentation for more information. (https://huggingface.co/docs/transformers/main/en/main_classes/text_generation)
+
+{'eval_loss': 1.8390387296676636, 'eval_accuracy': -2.813373253493014, 'eval_cer': 3.813373253493014, 'eval_runtime': 14.6155, 'eval_samples_per_second': 0.411, 'eval_steps_per_second': 0.068, 'epoch': 4.51}                                   
+
+{'train_runtime': 84.1535, 'train_samples_per_second': 4.218, 'train_steps_per_second': 0.475, 'train_loss': 1.8604132294654847, 'epoch': 4.51}                                                                                                   
+
+100%|████████████████████████████████████████████████████████████████████████████████████| 40/40 [01:24<00:00,  2.10s/it]
+
+
+
+🎯 进行独立测试 (Test Case)
+
+【标准答案】: 益棼黔則清河已足了之無俟勞人重疊其間彼不得久於粵吾鄉人猶思之元獻非戡定才並非大受之器高州軍務日壞與岑容賊相勾結峴莊方伯謹守初有警也蕭規鄉人書來言潯城可勿慮而廣海寨客民橫踞將為兩粵巨患吴少村往督辦人甚激昂而軍務未悉厘金並無起色怨毒沸騰江夏履新聞一切不著手而推之元獻毋乃太巧大局所關梓桑尤切昨不得已而有言幸蒙
+
+【模型预测】: 篆碑學字不暇營數月乃稍稍有進厥後愈勤益進是以歲余之功可以點識若干書竟於夜郎山崖... (此处略)
+
+【单条准确率】: -2.2375
+
+==============================
+
+cat <<EOF > /root/autodl-tmp/qwen_7b_ocr_no_punct/train_log.txt
+
+==============================
+
+{'loss': 3.7384, 'learning_rate': 8.750000000000001e-06, 'epoch': 0.56}                                                  
+
+{'loss': 1.8083, 'learning_rate': 7.500000000000001e-06, 'epoch': 1.13}                                                  
+
+{'loss': 1.6877, 'learning_rate': 6.25e-06, 'epoch': 1.69}                                                               
+
+{'loss': 1.5896, 'learning_rate': 5e-06, 'epoch': 2.25}                                                                  
+
+ 50%|██████████████████████████████████████████                                          | 20/40 [00:27<00:27,  1.36s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+
+Both `max_new_tokens` (=512) and `max_length`(=512) seem to have been set. `max_new_tokens` will take precedence. Please refer to the documentation for more information. (https://huggingface.co/docs/transformers/main/en/main_classes/text_generation)
+
+{'eval_loss': 1.8670374155044556, 'eval_accuracy': -1.0848303393213574, 'eval_cer': 2.0848303393213574, 'eval_runtime': 14.6792, 'eval_samples_per_second': 0.409, 'eval_steps_per_second': 0.068, 'epoch': 2.25}                                 
+
+{'loss': 1.5698, 'learning_rate': 3.7500000000000005e-06, 'epoch': 2.82}                                                 
+
+{'loss': 1.5373, 'learning_rate': 2.5e-06, 'epoch': 3.38}                                                                
+
+{'loss': 1.5012, 'learning_rate': 1.25e-06, 'epoch': 3.94}                                                               
+
+{'loss': 1.451, 'learning_rate': 0.0, 'epoch': 4.51}                                                                     
+
+100%|████████████████████████████████████████████████████████████████████████████████████| 40/40 [01:09<00:00,  1.36s/it]A decoder-only architecture is being used, but right-padding was detected! For correct generation results, please set `padding_side='left'` when initializing the tokenizer.
+
+Both `max_new_tokens` (=512) and `max_length`(=512) seem to have been set. `max_new_tokens` will take precedence. Please refer to the documentation for more information. (https://huggingface.co/docs/transformers/main/en/main_classes/text_generation)
+
+{'eval_loss': 1.8390387296676636, 'eval_accuracy': -2.813373253493014, 'eval_cer': 3.813373253493014, 'eval_runtime': 14.6155, 'eval_samples_per_second': 0.411, 'eval_steps_per_second': 0.068, 'epoch': 4.51}                                   
+
+{'train_runtime': 84.1535, 'train_samples_per_second': 4.218, 'train_steps_per_second': 0.475, 'train_loss': 1.8604132294654847, 'epoch': 4.51}                                                                                                   
+
+100%|████████████████████████████████████████████████████████████████████████████████████| 40/40 [01:24<00:00,  2.10s/it]
+
+
+
+🎯 进行独立测试 (Test Case)
+
+【标准答案】: 益棼黔則清河已足了之無俟勞人重疊其間彼不得久於粵吾鄉人猶思之元獻非戡定才並非大受之器高州軍務日壞與岑容賊相勾結峴莊方伯謹守初有警也蕭規鄉人書來言潯城可勿慮而廣海寨客民橫踞將為兩粵巨患吴少村往督辦人甚激昂而軍務未悉厘金並無起色怨毒沸騰江夏履新聞一切不著手而推之元獻毋乃太巧大局所關梓桑尤切昨不得已而有言幸蒙
+
+【模型预测】: 篆碑學字不暇營數月乃稍稍有進厥後愈勤益進是以歲余之功可以點識若干書竟於夜郎山崖... (此处略)
+
+【单条准确率】: -2.2375
+
+==============================
+
+EOF
